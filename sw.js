@@ -1,17 +1,37 @@
-// RYZE 69a9bbb06af8 – generated after vite build
-const CACHE = "ryze-offline-69a9bbb06af8";
+// RYZE 125e370a62da – generated after vite build
+const CACHE = "ryze-offline-125e370a62da";
 const ASSETS = [
   "./",
   "./apple-touch-icon.png",
-  "./assets/index-Cz9SdoUr.css",
-  "./assets/index-Dur-NqxW.js",
+  "./assets/index-Bd4goVBS.js",
+  "./assets/index-C6ValNII.css",
   "./favicon-32.png",
   "./icon-192.png",
   "./icon-512.png",
   "./icon-maskable-512.png",
   "./index.html",
   "./manifest.webmanifest",
-  "./ryze-icon-1024.png"
+  "./ryze-icon-1024.png",
+  "./sfx/neon/finish.wav",
+  "./sfx/neon/ready.wav",
+  "./sfx/neon/rest.wav",
+  "./sfx/neon/set.wav",
+  "./sfx/neon/time.wav",
+  "./sfx/prism/finish.wav",
+  "./sfx/prism/ready.wav",
+  "./sfx/prism/rest.wav",
+  "./sfx/prism/set.wav",
+  "./sfx/prism/time.wav",
+  "./sfx/titan/finish.wav",
+  "./sfx/titan/ready.wav",
+  "./sfx/titan/rest.wav",
+  "./sfx/titan/set.wav",
+  "./sfx/titan/time.wav",
+  "./sfx/velocity/finish.wav",
+  "./sfx/velocity/ready.wav",
+  "./sfx/velocity/rest.wav",
+  "./sfx/velocity/set.wav",
+  "./sfx/velocity/time.wav"
 ];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -49,4 +69,33 @@ self.addEventListener('fetch', e => {
       return fetch(req);
     })());
   }
+});
+// System push notifications: iOS decides the actual notification sound.
+self.addEventListener('push', event => {
+  event.waitUntil((async () => {
+    let data = {};
+    try { data = event.data ? event.data.json() : {}; } catch { /* no payload */ }
+    const title = typeof data.title === 'string' ? data.title : 'RYZE';
+    const body = typeof data.body === 'string' ? data.body : 'Dein Timer ist fertig!';
+    const icon = new URL('./icon-192.png', self.registration.scope).href;
+    await self.registration.showNotification(title, {
+      body, icon, badge: icon, tag:'ryze-timer',
+      data:{ target: new URL('./?ryzePush=1', self.registration.scope).href },
+    });
+  })());
+});
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const destination = event.notification.data?.target || new URL('./?ryzePush=1', self.registration.scope).href;
+    const windows = await self.clients.matchAll({ type:'window',includeUncontrolled:true });
+    for (const client of windows) {
+      if (client.url.startsWith(self.registration.scope)) {
+        await client.focus();
+        client.postMessage({ type:'RYZE_PUSH_OPEN' });
+        return;
+      }
+    }
+    if (self.clients.openWindow) await self.clients.openWindow(destination);
+  })());
 });
